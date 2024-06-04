@@ -760,8 +760,8 @@ int belle_sip_dialog_update(belle_sip_dialog_t *obj, belle_sip_transaction_t *tr
 						    as_uas ? "received" : "sent");
 						/* Detach the dialog from the transaction, so that the dialog does not get updated for nothing
 						 * by the killed transaction. */
-						belle_sip_transaction_set_dialog(previous_transaction, NULL);
-						belle_sip_transaction_terminate(previous_transaction);
+						// dms belle_sip_transaction_set_dialog(previous_transaction, NULL);
+						// dms belle_sip_transaction_terminate(previous_transaction);
 					}
 				}
 			} else if (is_subscribe) {

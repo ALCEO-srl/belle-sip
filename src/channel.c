@@ -298,6 +298,14 @@ static void belle_sip_channel_learn_public_ip_port(belle_sip_channel_t *obj, bel
 	const char *received;
 	int rport;
 
+	// dms ****
+	belle_sip_channel_set_public_ip_port(obj, obj->local_ip, obj->local_port);
+
+	obj->learnt_ip_port = TRUE;
+
+	return;
+	// dms ****
+
 	if (!via) {
 		belle_sip_error("channel [%p]: no via in response.", obj);
 		return;
