@@ -537,17 +537,25 @@ static int acquire_body(belle_sip_channel_t *obj, int end_of_stream) {
 
 static void notify_incoming_messages(belle_sip_channel_t *obj) {
 	belle_sip_list_t *elem, *l_it;
-
+    belle_sip_message("##### notify_incoming_messages - track = 0"); //dms
 	belle_sip_list_t *listeners =
 	    belle_sip_list_copy_with_data(obj->full_listeners, (void *(*)(void *))belle_sip_object_ref);
 
+    belle_sip_message("##### notify_incoming_messages - track = 1"); //dms
 	for (l_it = listeners; l_it != NULL; l_it = l_it->next) {
+		belle_sip_message("##### notify_incoming_messages - track = 2"); //dms
 		belle_sip_channel_listener_t *listener = (belle_sip_channel_listener_t *)l_it->data;
+		belle_sip_message("##### notify_incoming_messages - track = 3"); //dms
 		for (elem = obj->incoming_messages; elem != NULL; elem = elem->next) {
+            belle_sip_message("##### notify_incoming_messages - track = 4"); //dms
 			belle_sip_message_t *msg = (belle_sip_message_t *)elem->data;
+			belle_sip_message("##### notify_incoming_messages - track = 5"); //dms
 			BELLE_SIP_INTERFACE_METHODS_TYPE(belle_sip_channel_listener_t) * methods;
+			belle_sip_message("##### notify_incoming_messages - track = 6"); //dms
 			methods = BELLE_SIP_INTERFACE_GET_METHODS(listener, belle_sip_channel_listener_t);
+			belle_sip_message("##### notify_incoming_messages - track = 7"); //dms
 			if (methods->on_message) methods->on_message(listener, obj, msg);
+			belle_sip_message("##### notify_incoming_messages - track = 8"); //dms
 		}
 	}
 	belle_sip_list_free_with_data(listeners, belle_sip_object_unref);
@@ -563,6 +571,8 @@ void belle_sip_channel_parse_stream(belle_sip_channel_t *obj, int end_of_stream)
 	while ((num = (int)(obj->input_stream.write_ptr - obj->input_stream.read_ptr)) > 0) {
 
 		if (obj->input_stream.state == WAITING_MESSAGE_START) {
+
+			belle_sip_message("##### belle_sip_channel_parse_stream - track = 1"); //dms
 			int i;
 			/*first, make sure there is \r\n in the buffer, otherwise, micro parser cannot conclude, because we need a
 			 * complete request or response line somewhere*/
@@ -590,7 +600,7 @@ void belle_sip_channel_parse_stream(belle_sip_channel_t *obj, int end_of_stream)
 					break;
 				}
 			}
-
+            belle_sip_message("##### belle_sip_channel_parse_stream - track = 2"); //dms
 			if (i >= num - 1) {
 				belle_sip_debug(
 				    "[%s] received on channel [%p], cannot determine if expected or not, waiting for new data",
@@ -598,31 +608,39 @@ void belle_sip_channel_parse_stream(belle_sip_channel_t *obj, int end_of_stream)
 				break;
 			}
 		}
-
+        belle_sip_message("##### belle_sip_channel_parse_stream - track = 3"); //dms
 		if (obj->input_stream.state == MESSAGE_AQUISITION) {
+			belle_sip_message("##### belle_sip_channel_parse_stream - track = 4"); //dms
 			/*search for \r\n\r\n*/
 			char *end_of_message = NULL;
 			if ((end_of_message = strstr(obj->input_stream.read_ptr, "\r\n\r\n"))) {
+
+				belle_sip_message("##### belle_sip_channel_parse_stream - track = 5"); //dms
 				int bytes_to_parse;
 				char tmp;
 				/*end of message found*/
-				end_of_message += 4; /*add \r\n\r\n*/
+				end_of_message += 4; /*add \r\n\r\n*/ 
 				bytes_to_parse = (int)(end_of_message - obj->input_stream.read_ptr);
 				tmp = *end_of_message;
 				*end_of_message = '\0'; /*this is in order for the following log to print the message only to its end.*/
-				/*belle_sip_message("channel [%p] read message of [%i] bytes:\n%.40s...",obj, bytes_to_parse,
-				 * obj->input_stream.read_ptr);*/
+				belle_sip_message("channel [%p] read message of [%i] bytes:\n%.40s...",obj, bytes_to_parse,
+				  obj->input_stream.read_ptr);
+				belle_sip_message("##### belle_sip_channel_parse_stream - track = 6 bytes_to_parse=%i read_size=%lu", bytes_to_parse, read_size); //dms
 				obj->input_stream.msg =
 				    belle_sip_message_parse_raw(obj->input_stream.read_ptr, bytes_to_parse, &read_size);
+				belle_sip_message("##### belle_sip_channel_parse_stream - track = 7"); //dms	
 				*end_of_message = tmp;
 				obj->input_stream.read_ptr += read_size;
+				belle_sip_message("##### belle_sip_channel_parse_stream - track = 8"); //dms
 				if (obj->input_stream.msg && read_size > 0) {
+					belle_sip_message("##### belle_sip_channel_parse_stream - track = 9"); //dms
 					belle_sip_message("channel [%p] [%i] bytes parsed", obj, (int)read_size);
 					belle_sip_object_ref(obj->input_stream.msg);
+					belle_sip_message("##### belle_sip_channel_parse_stream - track = 10"); //dms
 					if (belle_sip_message_is_request(obj->input_stream.msg))
 						fix_incoming_via(BELLE_SIP_REQUEST(obj->input_stream.msg), obj->current_peer);
 					/*check for body*/
-
+                    belle_sip_message("##### belle_sip_channel_parse_stream - track = 11"); //dms
 					if (check_body(obj)) {
 						obj->input_stream.state = BODY_AQUISITION;
 					} else {
@@ -642,6 +660,7 @@ void belle_sip_channel_parse_stream(belle_sip_channel_t *obj, int end_of_stream)
 					obj->input_stream.read_ptr = end_of_message;
 					obj->input_stream.state = WAITING_MESSAGE_START;
 					obj->inhibit_input_logging_buffer = 0;
+					belle_sip_message("##### belle_sip_channel_parse_stream - track = 12"); //dms
 					continue;
 				}
 			} else break; /*The message isn't finished to be receive, we need more data*/
@@ -654,7 +673,9 @@ void belle_sip_channel_parse_stream(belle_sip_channel_t *obj, int end_of_stream)
 }
 
 static void belle_sip_channel_process_stream(belle_sip_channel_t *obj, int eos) {
+	belle_sip_message("##### belle_sip_channel_process_stream - track = 0"); //dms
 	belle_sip_channel_parse_stream(obj, eos);
+	belle_sip_message("##### belle_sip_channel_process_stream - track = 1"); //dms
 	if (obj->incoming_messages) {
 		if (obj->simulated_recv_return == 1500) {
 			belle_sip_list_t *elem;
@@ -667,6 +688,7 @@ static void belle_sip_channel_process_stream(belle_sip_channel_t *obj, int eos) 
 			belle_sip_list_free_with_data(obj->incoming_messages, belle_sip_object_unref);
 			obj->incoming_messages = NULL;
 		} else {
+			belle_sip_message("##### belle_sip_channel_process_stream - track = 2"); //dms
 			notify_incoming_messages(obj);
 		}
 	}
@@ -702,14 +724,18 @@ static int belle_sip_channel_process_read_data(belle_sip_channel_t *obj) {
 				belle_sip_free(logbuf);
 			}
 		}
+		belle_sip_message("##### belle_sip_channel_process_read_data - track = 0"); //dms
 		belle_sip_channel_process_stream(obj, FALSE);
+		belle_sip_message("##### belle_sip_channel_process_read_data - track = 1"); //dms
 		if (obj->input_stream.state == WAITING_MESSAGE_START) {
 			channel_end_recv_background_task(obj);
 		} /*if still in message acquisition state, keep the backgroud task*/
 	} else if (read_bytes == 0) {
 		/*before closing the channel, check if there was a pending message to receive, whose body acquisition is to be
 		 * finished.*/
+		belle_sip_message("##### belle_sip_channel_process_read_data - track = 2"); //dms
 		belle_sip_channel_process_stream(obj, TRUE);
+		belle_sip_message("##### belle_sip_channel_process_read_data - track = 3"); //dms
 		obj->closed_by_remote = TRUE;
 		channel_set_state(obj, BELLE_SIP_CHANNEL_DISCONNECTED);
 

@@ -129,11 +129,19 @@ belle_sip_message_t *belle_sip_message_parse_raw(const char *buff, size_t buff_l
 	pANTLR3_COMMON_TOKEN_STREAM tokens;
 	pbelle_sip_messageParser parser;
 	belle_sip_message_t *l_parsed_object;
+
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 0"); //dms
+
 	input = ANTLR_STREAM_NEW("message", buff, buff_length);
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 1"); //dms
 	lex = belle_sip_messageLexerNew(input);
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 2"); //dms
 	tokens = antlr3CommonTokenStreamSourceNew(1025, lex->pLexer->rec->state->tokSource);
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 3"); //dms
 	parser = belle_sip_messageParserNew(tokens);
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 4"); //dms
 	l_parsed_object = parser->message_raw(parser, message_length);
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 5"); //dms
 	/*	if (*message_length < buff_length) {*/
 	/*there is a body*/
 	/*		l_parsed_object->body_length=buff_length-*message_length;
@@ -141,10 +149,12 @@ belle_sip_message_t *belle_sip_message_parse_raw(const char *buff, size_t buff_l
 	        memcpy(l_parsed_object->body,buff+*message_length,l_parsed_object->body_length);
 	        l_parsed_object->body[l_parsed_object->body_length]='\0';
 	    }*/
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 6"); //dms   
 	parser->free(parser);
 	tokens->free(tokens);
 	lex->free(lex);
 	input->close(input);
+	belle_sip_message("##### belle_sip_message_parse_raw - track = 7"); //dms
 	return l_parsed_object;
 }
 
