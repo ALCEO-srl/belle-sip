@@ -319,11 +319,13 @@ static void belle_sip_provider_dispatch_response(belle_sip_provider_t *p, belle_
 void belle_sip_provider_dispatch_message(belle_sip_provider_t *prov, belle_sip_message_t *msg) {
 	int message_integrity_verified = TRUE;
 
+belle_sip_message("############ belle_sip_provider_dispatch_message"); //dms
 #ifndef BELLE_SIP_DONT_CHECK_HEADERS_IN_MESSAGE
 	message_integrity_verified = belle_sip_message_check_headers(msg);
 #endif
 
 	if (belle_sip_message_is_request(msg)) {
+		belle_sip_message("############ belle_sip_provider_dispatch_message, before belle_sip_provider_dispatch_request"); //dms
 		if (message_integrity_verified) belle_sip_provider_dispatch_request(prov, (belle_sip_request_t *)msg);
 		else {
 			belle_sip_response_t *resp = belle_sip_response_create_from_request(BELLE_SIP_REQUEST(msg), 400);
@@ -968,6 +970,9 @@ void belle_sip_provider_send_response(belle_sip_provider_t *p, belle_sip_respons
 		compute_hash_from_invariants((belle_sip_message_t *)resp, token, sizeof(token), "tag");
 		belle_sip_header_to_set_tag(to, token);
 	}
+
+	belle_sip_message("############ belle_sip_provider_send_response"); //dms
+
 	hop = belle_sip_response_get_return_hop(resp);
 	if (hop) {
 		chan = belle_sip_provider_get_channel(p, hop);

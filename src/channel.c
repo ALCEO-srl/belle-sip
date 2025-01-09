@@ -908,24 +908,44 @@ void belle_sip_channel_remove_listener(belle_sip_channel_t *obj, belle_sip_chann
 }
 
 int belle_sip_channel_matches(const belle_sip_channel_t *obj, const belle_sip_hop_t *hop, const struct addrinfo *addr) {
+	belle_sip_warning("############ belle_sip_channel_matches 1");//dms
 	if (hop) {
+
+        belle_sip_warning("############ belle_sip_channel_matches 2");//dms
+
 		if (obj->current_peer_cname && strcasecmp(hop->host, obj->current_peer_cname) == 0 &&
 		    hop->port == obj->peer_port) {
 			/*We are matching a specific node of a SRV record set. */
-			if (hop->cname && obj->peer_cname && strcasecmp(hop->cname, obj->current_peer_cname) != 0)
-				return 0; /*cname mismatch*/
+             belle_sip_warning("############ belle_sip_channel_matches 3");//dms
+
+			if (hop->cname && obj->peer_cname && strcasecmp(hop->cname, obj->current_peer_cname) != 0) {
+				belle_sip_warning("############ belle_sip_channel_matches 4");//dms
+				return 1; //dms /*cname mismatch*/
+            }
+			belle_sip_warning("############ belle_sip_channel_matches 5");//dms
 			return 1;
 		}
+		belle_sip_warning("############ belle_sip_channel_matches 6");//dms
+		belle_sip_warning("############ belle_sip_channel_matches hop->host[%s], obj->peer_name[%s]", hop->host, obj->peer_name);//dms
+		belle_sip_warning("############ belle_sip_channel_matches hop->port[%i], obj->peer_port[%i]", hop->port, obj->peer_port);//dms
+		
 		if (strcmp(hop->host, obj->peer_name) == 0 && (hop->port == obj->peer_port || obj->srv_overrides_port)) {
 			/*We may be matching the general name of the service, in that case the port doesn't matter.*/
 			if (hop->cname && obj->peer_cname && strcasecmp(hop->cname, obj->peer_cname) != 0) {
-				return 0; /*cname mismatch*/
+				belle_sip_warning("############ belle_sip_channel_matches 7 [%s]!=[%s]]", hop->cname, obj->peer_cname);//dms
+				return 1; //dms /*cname mismatch*/
 			}
+			belle_sip_warning("############ belle_sip_channel_matches 8");//dms
 			return 1;
 		}
 	}
-	if (addr && obj->current_peer) return bctbx_sockaddr_equals(addr->ai_addr, obj->current_peer->ai_addr);
-	return 0;
+	belle_sip_warning("############ belle_sip_channel_matches 9");//dms
+	if (addr && obj->current_peer) { 
+		belle_sip_warning("############ belle_sip_channel_matches 10");//dms
+		return bctbx_sockaddr_equals(addr->ai_addr, obj->current_peer->ai_addr);
+    }		
+	belle_sip_warning("############ belle_sip_channel_matches 11");//dms
+	return 0; //dms
 }
 
 const char *belle_sip_channel_get_local_address(belle_sip_channel_t *obj, int *port) {
@@ -1151,7 +1171,8 @@ void belle_sip_channel_notify_server_error(belle_sip_channel_t *obj) {
 }
 
 void channel_set_state(belle_sip_channel_t *obj, belle_sip_channel_state_t state) {
-	belle_sip_message("channel[%p]: entering state %s", obj, belle_sip_channel_state_to_string(state));
+	//belle_sip_message("channel[%p]: entering state %s", obj, belle_sip_channel_state_to_string(state));
+	belle_sip_error("channel[%p]: entering state %s", obj, belle_sip_channel_state_to_string(state)); //dms
 
 	if (obj->state == state) {
 		belle_sip_error("channel_set_state() called twice with the same state. This is a programming mistake.");
@@ -1507,16 +1528,23 @@ static void channel_process_queue(belle_sip_channel_t *obj) {
 	belle_sip_object_ref(obj); /* we need to ref ourself because code below may trigger our destruction*/
 
 	if (obj->out_state != OUTPUT_STREAM_IDLE) {
+		belle_sip_error("################ channel_process_queue 1");
 		_send_message(obj);
 	}
-
+    belle_sip_error("################ channel_process_queue 2");
 	while (obj->state == BELLE_SIP_CHANNEL_READY && obj->out_state == OUTPUT_STREAM_IDLE &&
 	       (msg = channel_pop_outgoing(obj)) != NULL) {
+			
+		belle_sip_error("################ channel_process_queue 20");
 		send_message(obj, msg);
+		belle_sip_error("################ channel_process_queue 21");
 		belle_sip_object_unref(msg);
 	}
+	belle_sip_error("################ channel_process_queue 3");
 	if (obj->state == BELLE_SIP_CHANNEL_READY && obj->out_state == OUTPUT_STREAM_IDLE) {
+		belle_sip_error("################ channel_process_queue 4");
 		channel_end_send_background_task(obj);
+		belle_sip_error("################ channel_process_queue 5");
 	}
 
 	belle_sip_object_unref(obj);
@@ -1673,7 +1701,7 @@ void belle_sip_channel_connect(belle_sip_channel_t *obj) {
 		obj->srv_overrides_port = TRUE;
 		obj->peer_port = port;
 	}
-	belle_sip_message("Trying to connect to [%s://%s:%i]", belle_sip_channel_get_transport_name(obj), ip,
+	belle_sip_error("##########  Trying to connect to [%s://%s:%i]", belle_sip_channel_get_transport_name(obj), ip,
 	                  obj->peer_port);
 
 	if (BELLE_SIP_OBJECT_VPTR(obj, belle_sip_channel_t)->connect(obj, obj->current_peer)) {
@@ -1688,8 +1716,10 @@ static void queue_message(belle_sip_channel_t *obj, belle_sip_message_t *msg) {
 	belle_sip_object_ref(msg);
 	channel_push_outgoing(obj, msg);
 	if (obj->state == BELLE_SIP_CHANNEL_INIT) {
+		belle_sip_error("############   BELLE_SIP_CHANNEL_INIT");
 		belle_sip_channel_prepare(obj);
 	} else if (obj->state == BELLE_SIP_CHANNEL_READY) {
+		belle_sip_error("############   BELLE_SIP_CHANNEL_READY");
 		channel_process_queue(obj);
 	}
 }
@@ -1739,13 +1769,44 @@ belle_sip_channel_t *belle_sip_channel_find_from_list_with_addrinfo(belle_sip_li
 	belle_sip_list_t *elem;
 	belle_sip_channel_t *chan;
 
+    belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo ");//dms
+
 	for (elem = l; elem != NULL; elem = elem->next) {
 		chan = (belle_sip_channel_t *)elem->data;
-		if (chan->state == BELLE_SIP_CHANNEL_DISCONNECTED || chan->state == BELLE_SIP_CHANNEL_ERROR) continue;
+		
+		if (chan->state == BELLE_SIP_CHANNEL_DISCONNECTED || chan->state == BELLE_SIP_CHANNEL_ERROR)  {
+           if (chan->state == BELLE_SIP_CHANNEL_DISCONNECTED)
+		       belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo BELLE_SIP_CHANNEL_DISCONNECTED");//dms
+
+		if (chan->state == BELLE_SIP_CHANNEL_ERROR)	   
+		   belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo BELLE_SIP_CHANNEL_ERROR");//dms
+
+
+		   continue;
+     	}
+		belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo 1");//dms
+        
+		if (chan->about_to_be_closed) {
+          belle_sip_warning("############ chan->about_to_be_closed=TRUE");//dms
+        } else {
+          belle_sip_warning("############ chan->about_to_be_closed=FALSE");//dms
+        } 
+
+		if (belle_sip_channel_matches(chan, hop, addr)) {
+          belle_sip_warning("############ belle_sip_channel_matches(chan, hop, addr)=TRUE");//dms
+        } else {
+          belle_sip_warning("############ belle_sip_channel_matches(chan, hop, addr)=FALSE");//dms
+        } 
+
 		if (!chan->about_to_be_closed && belle_sip_channel_matches(chan, hop, addr)) {
+
+			belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo found chan");//dms
+
 			return chan;
 		}
+		belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo 2");//dms
 	}
+	belle_sip_warning("############ belle_sip_channel_find_from_list_with_addrinfo not found return NULL;");//dms
 	return NULL;
 }
 
@@ -1753,6 +1814,9 @@ belle_sip_channel_t *belle_sip_channel_find_from_list_with_addrinfo(belle_sip_li
  * supported by the list of channels*/
 belle_sip_channel_t *belle_sip_channel_find_from_list(belle_sip_list_t *l, int ai_family, const belle_sip_hop_t *hop) {
 	belle_sip_channel_t *chan = NULL;
+
+    belle_sip_warning("############ belle_sip_channel_find_from_list ");//dms
+
 	struct addrinfo *res = bctbx_ip_address_to_addrinfo(
 	    ai_family, SOCK_STREAM /*needed on some platforms that return an error otherwise (QNX)*/, hop->host, hop->port);
 	chan = belle_sip_channel_find_from_list_with_addrinfo(l, hop, res);

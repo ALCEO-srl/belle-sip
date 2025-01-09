@@ -63,6 +63,8 @@ static int nist_send_new_response(belle_sip_nist_t *obj, belle_sip_response_t *r
 		case BELLE_SIP_TRANSACTION_TRYING:
 			if (code < 200) {
 				belle_sip_transaction_set_state(base, BELLE_SIP_TRANSACTION_PROCEEDING);
+				belle_sip_warning(
+			    "####### < 200 BELLE_SIP_TRANSACTION_TRYING  belle_sip_channel_queue_message ");//dms
 				belle_sip_channel_queue_message(base->channel, (belle_sip_message_t *)resp);
 				break;
 			}
@@ -71,6 +73,8 @@ static int nist_send_new_response(belle_sip_nist_t *obj, belle_sip_response_t *r
 			if (code >= 200) {
 				nist_set_completed(obj);
 			}
+			belle_sip_warning(
+			    "####### >= 200 BELLE_SIP_TRANSACTION_PROCEEDING  belle_sip_channel_queue_message ");//dms
 			belle_sip_channel_queue_message(base->channel, (belle_sip_message_t *)resp);
 			break;
 		case BELLE_SIP_TRANSACTION_COMPLETED:
